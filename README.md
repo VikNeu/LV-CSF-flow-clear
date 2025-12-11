@@ -61,5 +61,5 @@ On Windows, commands may need minor adjustments.
 
 The `/analysis` scripts do contain the MATLAB scripts to obtain the metrics analysed in `/stats`, starting with the preprocessed images.
 `/data` contains all the relevant data tables used in `/stats`.
-`/stats` contains all the jupyter notebooks used for creating plots and statistics - The respective scripts are organized figurewise and should be ready to run.
+`/stats` contains all the jupyter notebooks used for creating plots and statistics - The respective scripts are organized figurewise and should be ready to run. Don't forget to add the respective Mediation Toolbox Path into the mediation script manually
 
