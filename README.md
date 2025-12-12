@@ -27,6 +27,8 @@ The analysis code starting from the preprocessed data is written in MATLAB
 The instructions below assume a Unix-like system (macOS / Linux).  
 On Windows, commands may need minor adjustments.
 
+Installation should not take longer than 5 minutes.
+
 ### Software requirements
 
 - Python >= 3.13.2  
