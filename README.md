@@ -65,11 +65,11 @@ Installation should not take longer than 5 minutes.
   ```
 
 
-## Usage (Note: Still WIP)
+## Usage
 
 ### General
 
-The `/analysis` scripts do contain the MATLAB scripts to obtain the metrics analysed in `/stats`, starting with the preprocessed images.
+The `/analysis` scripts do contain the MATLAB scripts to obtain the metrics analysed in `/stats`, starting with the preprocessed images. The user is prompted to change the directories to match the personal data structure.
 `/data` contains all the relevant data tables used in `/stats`.
-`/stats` contains all the jupyter notebooks used for creating plots and statistics - The respective scripts are organized figurewise and should be ready to run opening jupyter notebook. Don't forget to add the respective Mediation Toolbox Path into the mediation script manually
+`/stats` contains all the jupyter notebooks used for creating plots and statistics - The respective scripts are organized figurewise and should be ready to run opening jupyter notebook. Don't forget to add the respective Mediation Toolbox Path into the mediation script manually.
 
