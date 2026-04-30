@@ -1,7 +1,7 @@
 %% Set the toolboxes and directories
 
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/CoSMoMVPA-master'));
-project_dir = '/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/data/flicker_physiology';
+addpath(genpath('...')); % Your Cosmo dir here
+project_dir = '...'; % Your Project dir here
 
 file_path_subjectlist = fullfile(project_dir,'progs/subjectlist_bids.txt'); 
 
@@ -40,6 +40,7 @@ for session = 11:12
         ventricular_border_mask_filename = fullfile(project_dir,'masks', sub_id,strcat('ses-',session_id),'lateral_ventricles_mask_fmri_space_border.nii.gz');
         csf_mask_filename = fullfile(project_dir,'/preprocData',sub_id,strcat('ses-',session_id),'/func/frs001_adv_search.feat/slice_zero_mask_manual_segmentation.nii.gz');
         gm_mask_filename = fullfile(project_dir,'masks', sub_id,strcat('ses-',session_id),'GM_mask_func_space_bin_no_lvs_or_subcort.nii.gz');
+        veins_mask_filename = fullfile(project_dir,'masks', sub_id,strcat('ses-',session_id),'Sinus_segmentation_BZ.nii.gz');
         extraction_timeframe_filename = fullfile(project_dir,'/preprocData',sub_id,strcat('ses-',session_id),'/func/timeframe_borders.txt');
         fileID_fmri_file = fopen(fmri_filename, 'r');
         physiology_table_filename_rest_session = fullfile(project_dir,'/rawData',sub_id,strcat('ses-',session_id),'/func',strcat(sub_id,'_task-rest_run-',sprintf('%02d',session),'_events.physio.tsv'));
@@ -57,10 +58,12 @@ for session = 11:12
             ventricular_border_mask = cosmo_fmri_dataset(ventricular_border_mask_filename,'nifti_form','sform');
             csf_mask = cosmo_fmri_dataset(csf_mask_filename,'nifti_form','sform');
             gm_mask = cosmo_fmri_dataset(gm_mask_filename,'nifti_form','sform');
+            veins_mask = cosmo_fmri_dataset(veins_mask_filename,'nifti_form','sform');
             fmri_mean = cosmo_fmri_dataset(fmri_mean_filename,'nifti_form','sform');
             ventricular_border_mask_idx = find(ventricular_border_mask.samples > 0.9);
             csf_mask_idx = find(csf_mask.samples > 0.9);
             gm_mask_idx = find(gm_mask.samples > 0.9);
+            vein_mask_idx = find(veins_mask.samples > 0.9);
 
 
             
@@ -109,6 +112,7 @@ for session = 11:12
             csf_tc = ((mean(fmri.samples(:,csf_mask_idx),2)/mean(fmri.samples(:,csf_mask_idx),"all")-1)*100); % The minus one is for getting % Signal Change
             %csf_tc = ((mean(fmri.samples(:,csf_mask_idx),2)/median(fmri.samples(:,csf_mask_idx),"all")-1)*100); % Testing MEDIAN!
             gm_tc = ((mean(fmri.samples(:,gm_mask_idx),2)/mean(fmri.samples(:,gm_mask_idx),"all")-1)*100); % The minus one is for getting % Signal Change
+            vein_tc = ((mean(fmri.samples(:,vein_mask_idx),2)/mean(fmri.samples(:,vein_mask_idx),"all")-1)*100); % The minus one is for getting % Signal Change
 
             %% PFI mask is the complete ventricular border mask
             partial_volume_voxel_indices = ventricular_border_mask_idx;
@@ -121,6 +125,8 @@ for session = 11:12
             csf_tc = detrend(csf_tc);
             gm_tc = detrend(gm_tc);
             gm_tc_gradient = gradient(gm_tc);
+            vein_tc = detrend(vein_tc);
+            vein_tc_gradient = gradient(vein_tc);
             ventricular_border_tc = detrend(ventricular_border_tc);
             ventricular_border_tc_gradient = gradient(ventricular_border_tc);
                
@@ -212,6 +218,36 @@ for session = 11:12
                     end
                 end
     
+
+                %same for vein
+                numBins = 18;
+                phaseEdges = linspace(-pi,pi,numBins+1);
+                [~, binIndices_vein_respiration] = histc(respPhase_resampled, phaseEdges);
+                binned_fmri_mean_vein_respiration = {};
+                alpha = 0.05;
+                for bin = 1:numBins
+                    dataInBin_vein_respiration = vein_tc(binIndices_vein_respiration == bin);
+                    if ~isempty(dataInBin_vein_respiration)
+                        binned_fmri_mean_vein_respiration{bin} = dataInBin_vein_respiration;
+                    else
+                        binned_fmri_mean_vein_respiration(bin) = NaN;
+                    end
+                end
+                
+                %same for vein gradient
+                numBins = 18;
+                phaseEdges = linspace(-pi,pi,numBins+1);
+                [~, binIndices_vein_gradient_respiration] = histc(respPhase_resampled, phaseEdges);
+                binned_fmri_mean_vein_gradient_respiration = {};
+                alpha = 0.05;
+                for bin = 1:numBins
+                    dataInBin_vein_gradient_respiration = vein_tc_gradient(binIndices_vein_gradient_respiration == bin);
+                    if ~isempty(dataInBin_vein_gradient_respiration)
+                        binned_fmri_mean_vein_gradient_respiration{bin} = dataInBin_vein_gradient_respiration;
+                    else
+                        binned_fmri_mean_vein_gradient_respiration(bin) = NaN;
+                    end
+                end
     
             %% Now the same for the cardiac signal
                 cardiacPhase_resampled = interp1(t_cardiac,cardiacPhase,t_fmri,'linear','extrap');
@@ -299,6 +335,37 @@ for session = 11:12
                 end
 
 
+                %same for vein
+                numBins = 18;
+                phaseEdges = linspace(-pi,pi,numBins+1);
+                [~, binIndices_vein_cardiac] = histc(cardiacPhase_resampled, phaseEdges);
+                binned_fmri_mean_vein_cardiac = {};
+                alpha = 0.05;
+                for bin = 1:numBins
+                    dataInBin_vein_cardiac = vein_tc(binIndices_vein_cardiac == bin);
+                    if ~isempty(dataInBin_vein_cardiac)
+                        binned_fmri_mean_vein_cardiac{bin} = dataInBin_vein_cardiac;
+                    else
+                        binned_fmri_mean_vein_cardiac(bin) = NaN;
+                    end
+                end
+
+                %same for vein gradient
+                numBins = 18;
+                phaseEdges = linspace(-pi,pi,numBins+1);
+                [~, binIndices_vein_gradient_cardiac] = histc(cardiacPhase_resampled, phaseEdges);
+                binned_fmri_mean_vein_gradient_cardiac = {};
+                alpha = 0.05;
+                for bin = 1:numBins
+                    dataInBin_vein_gradient_cardiac = vein_tc_gradient(binIndices_vein_gradient_cardiac == bin);
+                    if ~isempty(dataInBin_vein_gradient_cardiac)
+                        binned_fmri_mean_vein_gradient_cardiac{bin} = dataInBin_vein_gradient_cardiac;
+                    else
+                        binned_fmri_mean_vein_gradient_cardiac(bin) = NaN;
+                    end
+                end
+
+
 
                 Output_table.sub_id(num_iterations) = string(sub_id);
                 Output_table.session(num_iterations) = string(session_id);
@@ -312,6 +379,10 @@ for session = 11:12
                 Output_table.matrix_cardiac_gm(num_iterations) = {binned_fmri_mean_gm_cardiac};
                 Output_table.matrix_breathing_gm_gradient(num_iterations) = {binned_fmri_mean_gm_gradient_respiration};
                 Output_table.matrix_cardiac_gm_gradient(num_iterations) = {binned_fmri_mean_gm_gradient_cardiac};
+                Output_table.matrix_breathing_vein(num_iterations) = {binned_fmri_mean_vein_respiration};
+                Output_table.matrix_cardiac_vein(num_iterations) = {binned_fmri_mean_vein_cardiac};
+                Output_table.matrix_breathing_vein_gradient(num_iterations) = {binned_fmri_mean_vein_gradient_respiration};
+                Output_table.matrix_cardiac_vein_gradient(num_iterations) = {binned_fmri_mean_vein_gradient_cardiac};
                 
                 Output_table_cycle_length.average_breathing_cycle_length(num_iterations) = average_breathing_cycle_length;
                 Output_table_cycle_length.average_cardiac_cycle_length(num_iterations) = average_cardiac_cycle_length;
@@ -324,11 +395,11 @@ for session = 11:12
 
                     Output_matrix_timecourse = [t_fmri',cardiacPhase_resampled',respPhase_resampled',ventricular_border_tc_gradient, csf_tc,gm_tc_gradient];
                     filename_exemplary_tc = strcat('exemplary_tc_sub-01_ses-01.xls');
-                    writematrix(Output_matrix_timecourse,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_exemplary_tc))
+                    writematrix(Output_matrix_timecourse,fullfile('...',filename_exemplary_tc)) % Your output dir here
                 elseif strcmp(sub_id, 'sub-05') && strcmp(session_id,'11')
                     Output_matrix_timecourse = [t_fmri',cardiacPhase_resampled',respPhase_resampled',ventricular_border_tc_gradient, csf_tc,gm_tc_gradient];
                     filename_exemplary_tc = strcat('exemplary_tc_sub-05_ses-01.xls');
-                    writematrix(Output_matrix_timecourse,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_exemplary_tc))
+                    writematrix(Output_matrix_timecourse,fullfile('...',filename_exemplary_tc)) % Your output dir here
                 end
         end
         
@@ -427,6 +498,42 @@ for shuffle_iter = 1:shuffles
 end
 
 
+% For Cardiac Vein
+null_dist_cardiac_vein = zeros(shuffles,numBins);
+for shuffle_iter = 1:shuffles
+
+    data_to_shuffle = Output_table.matrix_cardiac_vein;
+    shuffled_data = cell(n_subjects,1);
+
+    for subject = 1:n_subjects
+        shuffled_bins = randperm(numBins); % Randomly shuffle bin indices
+        shuffled_data{subject} = data_to_shuffle{subject}(shuffled_bins);
+    end
+
+    shuffled_means = cellfun(@(x) cellfun(@mean, x), shuffled_data, 'UniformOutput', false);
+    shuffled_mean_signal = mean(cell2mat(shuffled_means), 1);
+    null_dist_cardiac_vein(shuffle_iter, :) = shuffled_mean_signal;
+end
+
+% For Cardiac d/dt Vein
+null_dist_cardiac_d_dt_vein = zeros(shuffles,numBins);
+for shuffle_iter = 1:shuffles
+
+    data_to_shuffle = Output_table.matrix_cardiac_vein_gradient;
+    shuffled_data = cell(n_subjects,1);
+
+    for subject = 1:n_subjects
+        shuffled_bins = randperm(numBins); % Randomly shuffle bin indices
+        shuffled_data{subject} = data_to_shuffle{subject}(shuffled_bins);
+    end
+
+    shuffled_means = cellfun(@(x) cellfun(@mean, x), shuffled_data, 'UniformOutput', false);
+    shuffled_mean_signal = mean(cell2mat(shuffled_means), 1); % Some NaNs in the sinus masks
+    null_dist_cardiac_d_dt_vein(shuffle_iter, :) = shuffled_mean_signal;
+end
+
+
+
 
 %----
 % For Respiration CSF
@@ -514,32 +621,76 @@ for shuffle_iter = 1:shuffles
     null_dist_respiration_d_dt_gm(shuffle_iter, :) = shuffled_mean_signal;
 end
 
+
+% For Respiration vein
+null_dist_respiration_vein = zeros(shuffles,numBins);
+for shuffle_iter = 1:shuffles
+
+    data_to_shuffle = Output_table.matrix_breathing_vein;
+    shuffled_data = cell(n_subjects,1);
+
+    for subject = 1:n_subjects
+        shuffled_bins = randperm(numBins); % Randomly shuffle bin indices
+        shuffled_data{subject} = data_to_shuffle{subject}(shuffled_bins);
+    end
+
+    shuffled_means = cellfun(@(x) cellfun(@mean, x), shuffled_data, 'UniformOutput', false);
+    shuffled_mean_signal = mean(cell2mat(shuffled_means), 1); % Some NaNs in the sinus masks
+    null_dist_respiration_vein(shuffle_iter, :) = shuffled_mean_signal;
+end
+
+% For Respiration d/dt vein
+null_dist_respiration_d_dt_vein = zeros(shuffles,numBins);
+for shuffle_iter = 1:shuffles
+
+    data_to_shuffle = Output_table.matrix_breathing_vein_gradient;
+    shuffled_data = cell(n_subjects,1);
+
+    for subject = 1:n_subjects
+        shuffled_bins = randperm(numBins); % Randomly shuffle bin indices
+        shuffled_data{subject} = data_to_shuffle{subject}(shuffled_bins);
+    end
+
+    shuffled_means = cellfun(@(x) cellfun(@mean, x), shuffled_data, 'UniformOutput', false);
+    shuffled_mean_signal = mean(cell2mat(shuffled_means), 1); % Some NaNs in the sinus masks
+    null_dist_respiration_d_dt_vein(shuffle_iter, :) = shuffled_mean_signal;
+end
+
+
 % Save the 6 null distributions
-filename_null_cardiac_csf = strcat('null_cardiac_csf_31_07.xls');
-filename_null_cardiac_pfi = strcat('null_cardiac_pfi_31_07.xls');
-filename_null_cardiac_d_dt_pfi = strcat('null_cardiac_d_dt_pfi_31_07.xls');
-filename_null_cardiac_gm = strcat('null_cardiac_gm_31_07.xls');
-filename_null_cardiac_d_dt_gm = strcat('null_cardiac_d_dt_gm_31_07.xls');
-filename_null_respiration_csf = strcat('null_respiration_csf_31_07.xls');
-filename_null_respiration_pfi = strcat('null_respiration_pfi_31_07.xls');
-filename_null_respiration_d_dt_pfi = strcat('null_respiration_d_dt_pfi_31_07.xls');
-filename_null_respiration_gm = strcat('null_respiration_gm_31_07.xls');
-filename_null_respiration_d_dt_gm = strcat('null_respiration_d_dt_gm_31_07.xls');
+filename_null_cardiac_csf = strcat('null_cardiac_csf.xls');
+filename_null_cardiac_pfi = strcat('null_cardiac_pfi.xls');
+filename_null_cardiac_d_dt_pfi = strcat('null_cardiac_d_dt_pfi.xls');
+filename_null_cardiac_gm = strcat('null_cardiac_gm.xls');
+filename_null_cardiac_d_dt_gm = strcat('null_cardiac_d_dt_gm.xls');
+filename_null_cardiac_vein = strcat('null_cardiac_vein.xls');
+filename_null_cardiac_d_dt_vein = strcat('null_cardiac_d_dt_vein.xls');
+filename_null_respiration_csf = strcat('null_respiration_csf.xls');
+filename_null_respiration_pfi = strcat('null_respiration_pfi.xls');
+filename_null_respiration_d_dt_pfi = strcat('null_respiration_d_dt_pfi.xls');
+filename_null_respiration_gm = strcat('null_respiration_gm.xls');
+filename_null_respiration_d_dt_gm = strcat('null_respiration_d_dt_gm.xls');
+filename_null_respiration_vein = strcat('null_respiration_vein.xls');
+filename_null_respiration_d_dt_vein = strcat('null_respiration_d_dt_vein.xls');
 %--
-writematrix(null_dist_cardiac_csf,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_cardiac_csf))
-writematrix(null_dist_cardiac_pfi,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_cardiac_pfi))
-writematrix(null_dist_cardiac_d_dt_pfi,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_cardiac_d_dt_pfi))
-writematrix(null_dist_cardiac_gm,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_cardiac_gm))
-writematrix(null_dist_cardiac_d_dt_gm,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_cardiac_d_dt_gm))
-writematrix(null_dist_respiration_csf,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_respiration_csf))
-writematrix(null_dist_respiration_pfi,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_respiration_pfi))
-writematrix(null_dist_respiration_d_dt_pfi,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_respiration_d_dt_pfi))
-writematrix(null_dist_respiration_gm,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_respiration_gm))
-writematrix(null_dist_respiration_d_dt_gm,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_null_respiration_d_dt_gm))
+writematrix(null_dist_cardiac_csf,fullfile('...',filename_null_cardiac_csf)) % Your output dirs here
+writematrix(null_dist_cardiac_pfi,fullfile('...',filename_null_cardiac_pfi))
+writematrix(null_dist_cardiac_d_dt_pfi,fullfile('...',filename_null_cardiac_d_dt_pfi))
+writematrix(null_dist_cardiac_gm,fullfile('...',filename_null_cardiac_gm))
+writematrix(null_dist_cardiac_d_dt_gm,fullfile('...',filename_null_cardiac_d_dt_gm))
+writematrix(null_dist_cardiac_vein,fullfile('...',filename_null_cardiac_vein))
+writematrix(null_dist_cardiac_d_dt_vein,fullfile('...',filename_null_cardiac_d_dt_vein))
+writematrix(null_dist_respiration_csf,fullfile('...',filename_null_respiration_csf))
+writematrix(null_dist_respiration_pfi,fullfile('...',filename_null_respiration_pfi))
+writematrix(null_dist_respiration_d_dt_pfi,fullfile('...',filename_null_respiration_d_dt_pfi))
+writematrix(null_dist_respiration_gm,fullfile('...',filename_null_respiration_gm))
+writematrix(null_dist_respiration_d_dt_gm,fullfile('...',filename_null_respiration_d_dt_gm))
+writematrix(null_dist_respiration_vein,fullfile('...',filename_null_respiration_vein))
+writematrix(null_dist_respiration_d_dt_vein,fullfile('...',filename_null_respiration_d_dt_vein))
 
 % Save the output table
-filename_output_table_cycle_length = strcat('Output_table_cycle_length_31_07_25.xls');
-writetable(Output_table_cycle_length,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/',filename_output_table_cycle_length))
+filename_output_table_cycle_length = strcat('Output_table_cycle_length.xls');
+writetable(Output_table_cycle_length,fullfile('...',filename_output_table_cycle_length)) % Your output dir here
 
 
 
@@ -555,6 +706,8 @@ while ~feof(fileID_good_subjects)
     sub_id_table_ventricle_gradient = strcat(strrep(sub_id,'-','_'),'_ventricle_gradient');
     sub_id_table_gm = strcat(strrep(sub_id,'-','_'),'_gm');
     sub_id_table_gm_gradient = strcat(strrep(sub_id,'-','_'),'_gm_gradient');
+    sub_id_table_vein = strcat(strrep(sub_id,'-','_'),'_vein');
+    sub_id_table_vein_gradient = strcat(strrep(sub_id,'-','_'),'_vein_gradient');
     session_id = num2str(session);
     % Check if the line is empty (end of file)
     if isempty(sub_id)
@@ -574,6 +727,8 @@ while ~feof(fileID_good_subjects)
     Output_subject_ventricle_gradient = [];
     Output_subject_gm = [];
     Output_subject_gm_gradient = [];
+    Output_subject_vein = [];
+    Output_subject_vein_gradient = [];
 
     for i = 1:size(Output_table_subject,1)
         Output_subject_ventricle = [Output_subject_ventricle; Output_table_subject.matrix_breathing_ventricle{i}];
@@ -595,17 +750,30 @@ while ~feof(fileID_good_subjects)
         Output_subject_gm_gradient = [Output_subject_gm_gradient; Output_table_subject.matrix_breathing_gm_gradient{i}];
     end
 
+    for i = 1:size(Output_table_subject,1)
+        Output_subject_vein = [Output_subject_vein; Output_table_subject.matrix_breathing_vein{i}];
+    end
+
+    for i = 1:size(Output_table_subject,1)
+        Output_subject_vein_gradient = [Output_subject_vein_gradient; Output_table_subject.matrix_breathing_vein_gradient{i}];
+    end
+
     %% Create cells to be able to mean over the subject
     Output_subject_ventricle_final = cell(1,numBins);
     Output_subject_csf_final = cell(1,numBins);
     Output_subject_ventricle_gradient_final = cell(1,numBins);
     Output_subject_gm_final = cell(1,numBins);
     Output_subject_gm_gradient_final = cell(1,numBins);
+    Output_subject_vein_final = cell(1,numBins);
+    Output_subject_vein_gradient_final = cell(1,numBins);
+
     median_tc_ventricular_border_respiration_subject = zeros(1,numBins);
     median_tc_csf_respiration_subject = zeros(1,numBins);
     median_tc_ventricular_border_gradient_respiration_subject = zeros(1,numBins);
     median_tc_gm_respiration_subject = zeros(1,numBins);
     median_tc_gm_gradient_respiration_subject = zeros(1,numBins);
+    median_tc_vein_respiration_subject = zeros(1,numBins);
+    median_tc_vein_gradient_respiration_subject = zeros(1,numBins);
     for i = 1:size(Output_subject_ventricle,2)
         for j = 1:size(Output_subject_ventricle,1)
             Output_subject_ventricle_final{1,i} = [Output_subject_ventricle_final{i};Output_subject_ventricle{j,i}];
@@ -613,6 +781,8 @@ while ~feof(fileID_good_subjects)
             Output_subject_ventricle_gradient_final{1,i} = [Output_subject_ventricle_gradient_final{i};Output_subject_ventricle_gradient{j,i}];
             Output_subject_gm_final{1,i} = [Output_subject_gm_final{i};Output_subject_gm{j,i}];
             Output_subject_gm_gradient_final{1,i} = [Output_subject_gm_gradient_final{i};Output_subject_gm_gradient{j,i}];
+            Output_subject_vein_final{1,i} = [Output_subject_vein_final{i};Output_subject_vein{j,i}];
+            Output_subject_vein_gradient_final{1,i} = [Output_subject_vein_gradient_final{i};Output_subject_vein_gradient{j,i}];
 
         end
         median_tc_ventricular_border_respiration_subject(1,i) = median(Output_subject_ventricle_final{1,i});
@@ -620,6 +790,8 @@ while ~feof(fileID_good_subjects)
         median_tc_ventricular_border_gradient_respiration_subject(1,i) = median(Output_subject_ventricle_gradient_final{1,i});
         median_tc_gm_respiration_subject(1,i) = median(Output_subject_gm_final{1,i});
         median_tc_gm_gradient_respiration_subject(1,i) = median(Output_subject_gm_gradient_final{1,i});
+        median_tc_vein_respiration_subject(1,i) = median(Output_subject_vein_final{1,i});
+        median_tc_vein_gradient_respiration_subject(1,i) = median(Output_subject_vein_gradient_final{1,i});
 
     end
 
@@ -630,11 +802,13 @@ while ~feof(fileID_good_subjects)
         Final_table_respiration.(sub_id_table_ventricle_gradient) (j) = median_tc_ventricular_border_gradient_respiration_subject(j);
         Final_table_respiration.(sub_id_table_gm) (j) = median_tc_gm_respiration_subject(j);
         Final_table_respiration.(sub_id_table_gm_gradient) (j) = median_tc_gm_gradient_respiration_subject(j);
+        Final_table_respiration.(sub_id_table_vein) (j) = median_tc_vein_respiration_subject(j);
+        Final_table_respiration.(sub_id_table_vein_gradient) (j) = median_tc_vein_gradient_respiration_subject(j);
     end
     
 end
 %% Export results
-writetable(Final_table_respiration,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/Final_table_respiration_31_07_25.xls'))
+writetable(Final_table_respiration,fullfile('...')) % Your output dir and filename here
 
 %% Do the same for cardiac
 frewind(fileID_good_subjects)
@@ -647,6 +821,8 @@ Final_table_cardiac = table();
         sub_id_table_ventricle_gradient = strcat(strrep(sub_id,'-','_'),'_ventricle_gradient');
         sub_id_table_gm = strcat(strrep(sub_id,'-','_'),'_gm');
         sub_id_table_gm_gradient = strcat(strrep(sub_id,'-','_'),'_gm_gradient');
+        sub_id_table_vein = strcat(strrep(sub_id,'-','_'),'_vein');
+        sub_id_table_vein_gradient = strcat(strrep(sub_id,'-','_'),'_vein_gradient');
         session_id = num2str(session);
         if isempty(sub_id)
             break; % Exit the loop when the end of the file is reached
@@ -662,6 +838,8 @@ Final_table_cardiac = table();
         Output_subject_ventricle_gradient = [];
         Output_subject_gm = [];
         Output_subject_gm_gradient = [];
+        Output_subject_vein = [];
+        Output_subject_vein_gradient = [];
 
         for i = 1:size(Output_table_subject,1)
             Output_subject_ventricle = [Output_subject_ventricle; Output_table_subject.matrix_cardiac_ventricle{i}];
@@ -683,17 +861,29 @@ Final_table_cardiac = table();
             Output_subject_gm_gradient = [Output_subject_gm_gradient; Output_table_subject.matrix_cardiac_gm_gradient{i}];
         end
 
+        for i = 1:size(Output_table_subject,1)
+            Output_subject_vein = [Output_subject_vein; Output_table_subject.matrix_cardiac_vein{i}];
+        end
+
+        for i = 1:size(Output_table_subject,1)
+            Output_subject_vein_gradient = [Output_subject_vein_gradient; Output_table_subject.matrix_cardiac_vein_gradient{i}];
+        end
+
 
         Output_subject_ventricle_final = cell(1,numBins);
         Output_subject_csf_final = cell(1,numBins);
         Output_subject_ventricle_gradient_final = cell(1,numBins);
         Output_subject_gm_final = cell(1,numBins);
         Output_subject_gm_gradient_final = cell(1,numBins);
+        Output_subject_vein_final = cell(1,numBins);
+        Output_subject_vein_gradient_final = cell(1,numBins);
         median_tc_ventricular_border_cardiac_subject = zeros(1,numBins);
         median_tc_csf_cardiac_subject = zeros(1,numBins);
         median_tc_ventricular_border_gradient_cardiac_subject = zeros(1,numBins);
         median_tc_gm_cardiac_subject = zeros(1,numBins);
         median_tc_gm_gradient_cardiac_subject = zeros(1,numBins);
+        median_tc_vein_cardiac_subject = zeros(1,numBins);
+        median_tc_vein_gradient_cardiac_subject = zeros(1,numBins);
         for i = 1:size(Output_subject_ventricle,2)
             for j = 1:size(Output_subject_ventricle,1)
                 Output_subject_ventricle_final{1,i} = [Output_subject_ventricle_final{i};Output_subject_ventricle{j,i}];
@@ -701,12 +891,16 @@ Final_table_cardiac = table();
                 Output_subject_ventricle_gradient_final{1,i} = [Output_subject_ventricle_gradient_final{i};Output_subject_ventricle_gradient{j,i}];
                 Output_subject_gm_final{1,i} = [Output_subject_gm_final{i};Output_subject_gm{j,i}];
                 Output_subject_gm_gradient_final{1,i} = [Output_subject_gm_gradient_final{i};Output_subject_gm_gradient{j,i}];
+                Output_subject_vein_final{1,i} = [Output_subject_vein_final{i};Output_subject_vein{j,i}];
+                Output_subject_vein_gradient_final{1,i} = [Output_subject_vein_gradient_final{i};Output_subject_vein_gradient{j,i}];
             end
             median_tc_ventricular_border_cardiac_subject(1,i) = median(Output_subject_ventricle_final{1,i});
             median_tc_csf_cardiac_subject(1,i) = median(Output_subject_csf_final{1,i});
             median_tc_ventricular_border_gradient_cardiac_subject(1,i) = median(Output_subject_ventricle_gradient_final{1,i});
             median_tc_gm_cardiac_subject(1,i) = median(Output_subject_gm_final{1,i});
             median_tc_gm_gradient_cardiac_subject(1,i) = median(Output_subject_gm_gradient_final{1,i});
+            median_tc_vein_cardiac_subject(1,i) = median(Output_subject_vein_final{1,i});
+            median_tc_vein_gradient_cardiac_subject(1,i) = median(Output_subject_vein_gradient_final{1,i});
         end       
 
         for j = 1:18
@@ -715,8 +909,10 @@ Final_table_cardiac = table();
             Final_table_cardiac.(sub_id_table_ventricle_gradient) (j) = median_tc_ventricular_border_gradient_cardiac_subject(j);
             Final_table_cardiac.(sub_id_table_gm) (j) = median_tc_gm_cardiac_subject(j);
             Final_table_cardiac.(sub_id_table_gm_gradient) (j) = median_tc_gm_gradient_cardiac_subject(j);
+            Final_table_cardiac.(sub_id_table_vein) (j) = median_tc_vein_cardiac_subject(j);
+            Final_table_cardiac.(sub_id_table_vein_gradient) (j) = median_tc_vein_gradient_cardiac_subject(j);
 
         end
         
     end
-writetable(Final_table_cardiac,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker_physiology/Final_table_cardiac_31_07_25.xls'))
+writetable(Final_table_cardiac,fullfile('...')) % Your output dir and filename here
