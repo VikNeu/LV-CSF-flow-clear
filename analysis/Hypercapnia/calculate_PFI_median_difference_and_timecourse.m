@@ -1,5 +1,5 @@
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/CoSMoMVPA-master'));
-project_dir = '/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/data/Hypercapnia';
+addpath(genpath('...')); % Your Cosmo directory here
+project_dir = '...'; % Your project dir here
 subjectlist = 'subjectlist.txt';
 
 file_path_subjectlist = fullfile(project_dir,'progs',subjectlist); 
@@ -24,8 +24,12 @@ for session = 1
         end
         
         fmri_filename = fullfile(project_dir,'/preprocData',sub_id,strcat('ses-',session_id),'/func/frs001_adv_search.feat/filtered_func_data_without_inflow_slices.nii.gz');
+        fmri_aroma_filename = fullfile(project_dir,'/preprocData',sub_id,strcat('ses-',session_id),'/func/frs001_adv_search.feat/ICA_AROMA/denoised_func_data_nonaggr.nii.gz');
         mean_fmri_filename = fullfile(project_dir,'/preprocData',sub_id,strcat('ses-',session_id),'/func/frs001_adv_search.feat/mean_func_without_inflow_slices.nii.gz');
         ventricle_mask_filename = fullfile(project_dir,'/masks',sub_id,strcat('ses-',session_id),'/lateral_ventricle_border_mask_fmri_space_with_pve.nii.gz');
+        gm_mask_filename = fullfile(project_dir,'/masks',sub_id,strcat('ses-',session_id),'/GM_mask_func_space_bin_no_lvs.nii.gz');
+
+        
         fileID_fmri_file = fopen(fmri_filename, 'r');
         if fileID_fmri_file == -1 || (exist(ventricle_mask_filename) == 0)
             disp('Subject is not completely preprocessed')
@@ -39,22 +43,37 @@ for session = 1
         Hypercapnia_End = 85;
 
         fmri = cosmo_fmri_dataset(fmri_filename,'nifti_form','sform');
+        fmri_aroma = cosmo_fmri_dataset(fmri_aroma_filename,'nifti_form','sform');
         mean_fmri = cosmo_fmri_dataset(mean_fmri_filename,'nifti_form','sform');
+
+
         ventricle_border_mask = cosmo_fmri_dataset(ventricle_mask_filename,'nifti_form','sform');
         ventricle_border_idx = find(ventricle_border_mask.samples > 0.9); 
+        gm_mask = cosmo_fmri_dataset(gm_mask_filename,'nifti_form','sform');
+        gm_idx = find(gm_mask.samples > 0.9); 
+
+
+
         ventricle_border_tc = mean(fmri.samples(:,ventricle_border_idx),2);
         ventricle_border_tc_normalized = ventricle_border_tc/mean(ventricle_border_tc);
+        gm_tc = mean(fmri_aroma.samples(:,gm_idx),2);
+        gm_tc_normalized = gm_tc/mean(gm_tc);
+
 
         PFI_median_subtraction_nc_hc_normalized = median(ventricle_border_tc_normalized(Normocapnia_Start:Normocapnia_End))-median(ventricle_border_tc_normalized(Hypercapnia_Start:Hypercapnia_End));
+        GM_median_subtraction_nc_hc_normalized = median(gm_tc_normalized(Normocapnia_Start:Normocapnia_End))-median(gm_tc_normalized(Hypercapnia_Start:Hypercapnia_End));
+
         
 
 
         Output_table.sub_id(num_iterations) = string(sub_id);
         Output_table.session_id(num_iterations) = string(session_id);
         Output_table.PFI_median_subtraction_nc_hc_normalized(num_iterations) = PFI_median_subtraction_nc_hc_normalized;
+        Output_table.GM_median_subtraction_nc_hc_normalized(num_iterations) = GM_median_subtraction_nc_hc_normalized;
         Output_table.ventricle_border_tc_normalized(num_iterations) = {ventricle_border_tc_normalized};
+        Output_table.gm_tc_normalized(num_iterations) = {gm_tc_normalized};
         num_iterations = num_iterations + 1;
     end
 end
 
-writetable(Output_table,fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/Hypercapnia/Nonramp_PFI_table_23_05_25.csv'))
+writetable(Output_table,fullfile('...')) % Your output dir and filename here
