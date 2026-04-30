@@ -1,13 +1,13 @@
 %% Set toolboxes and directories
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/CoSMoMVPA-master'));
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/CanlabCore-master'));
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/canlab-MediationToolbox-19917e7'));
-project_dir = '/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/data/sleep';
+addpath(genpath('...')); % Your Cosmo dir here
+addpath(genpath('...')); % Your Canlab dir here
+addpath(genpath('...')); % Your Canlab mediation dir here
+project_dir = '...'; % Your Project dir here
 file_path_subjectlist = fullfile(project_dir,'progs/subjectlist_bids.txt'); 
 
 % Open the file for reading
 fileID_good_subjects = fopen(file_path_subjectlist, 'r');
-Output_table_file_path = fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/sleep/sleep_amplitudes_90_sec_chunks_06_06_2025.xls');
+Output_table_file_path = fullfile('...'); % Your output dir and filename here
 % Check if the file was opened successfully
 if fileID_good_subjects == -1
     error('Failed to open the file.')
@@ -157,10 +157,11 @@ for session = 1:12
                         
                         %Calculate GM amplitude and nonfiltered data
                         gm_column_sessionwise = gm_column(Start_TR:End_TR);
+                        gm_column_sessionwise_detrend = detrend(gm_column);
                         csf_column_sessionwise = csf_column(Start_TR:End_TR);
                         gm_amplitude = max(gm_column_sessionwise) - min(gm_column_sessionwise);
                         gm_amplitude_normalized = gm_amplitude/mean(gm_column_sessionwise);
-      
+                        gm_confidence_interval_normalized = (prctile(gm_column_sessionwise_detrend,97.5) - prctile(gm_column_sessionwise_detrend,2.5))/mean(gm_column_sessionwise);
                         %% Get the timecourses of the specific sleep session
                         gm_column_band_timeseries_sessionwise = gm_column_band_timeseries(Start_TR:End_TR);
                         gm_derivative_sessionwise = gradient(gm_column_band_timeseries_sessionwise);
@@ -193,8 +194,8 @@ for session = 1:12
                      
                         %% Get the PFI Amplitude of the specific sleep session
                         partial_volume_effect_amplitude = max(mean_partial_volume_voxel_tc(Start_TR:End_TR)) - min(mean_partial_volume_voxel_tc(Start_TR:End_TR));
-                        partial_volume_effect_amplitude_normalized = partial_volume_effect_amplitude/mean(mean_partial_volume_voxel_tc);
-                        
+                        partial_volume_effect_amplitude_normalized = partial_volume_effect_amplitude/mean(mean_partial_volume_voxel_tc(Start_TR:End_TR));
+                        partial_volume_effect_confidence_interval_normalized = (prctile(partial_volume_voxel_tc_detrend(Start_TR:End_TR),97.5) - prctile(partial_volume_voxel_tc_detrend(Start_TR:End_TR),2.5))/mean(mean_partial_volume_voxel_tc(Start_TR:End_TR));
     
                         %% Add data to Output table
                         Output_table.session(num_iterations) = sleep_stadium_table_session_wise.session(timeslot);
@@ -203,7 +204,9 @@ for session = 1:12
                         Output_table.session_number(num_iterations) = sleep_stadium_table_session_wise.session_number(timeslot);
                         Output_table.partial_volume_amplitude(num_iterations) = partial_volume_effect_amplitude;
                         Output_table.partial_volume_amplitude_normalized(num_iterations) = partial_volume_effect_amplitude_normalized;
+                        Output_table.partial_volume_confidence_interval_normalized(num_iterations) = partial_volume_effect_confidence_interval_normalized;
                         Output_table.gm_amplitude_normalized(num_iterations) = gm_amplitude_normalized;
+                        Output_table.gm_confidence_interval_normalized(num_iterations) = gm_confidence_interval_normalized;
                         Output_table.Start_TR(num_iterations) = Start_TR;
                         Output_table.End_TR(num_iterations) = End_TR;
                         Output_table.r_ventricle_gm(num_iterations) = r_ventricle_gm;
@@ -281,10 +284,10 @@ end
 
 %% Export data
 writetable(Output_table,Output_table_file_path)
-writetable(mediation_table, fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/sleep/mediation_table_06_06_25.csv'))
-writetable(mediation_table_only_sleep,fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/sleep/mediation_table_only_sleep_06_06_25.csv'))
-writetable(mediation_table_only_wake,fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/sleep/mediation_table_only_wake_06_06_25.csv'))
-writetable(plot_timecourse_table_sleep,fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/sleep/plot_timecourse_table_only_sleep_06_06_25.csv'))
-writetable(plot_timecourse_table_wake,fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/sleep/plot_timecourse_table_only_wake_06_06_25.csv'))
-writetable(plot_timecourse_table_sleep_unfil,fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/sleep/plot_timecourse_table_only_sleep_unfil_12_06_25.csv'))
-writetable(plot_timecourse_table_wake_unfil,fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/sleep/plot_timecourse_table_only_wake_unfil_12_06_25.csv'))
+writetable(mediation_table, fullfile('...')) % Your output dirs and filenames here
+writetable(mediation_table_only_sleep,fullfile('...'))
+writetable(mediation_table_only_wake,fullfile('...'))
+writetable(plot_timecourse_table_sleep,fullfile('...'))
+writetable(plot_timecourse_table_wake,fullfile('...'))
+writetable(plot_timecourse_table_sleep_unfil,fullfile('...'))
+writetable(plot_timecourse_table_wake_unfil,fullfile('...'))
