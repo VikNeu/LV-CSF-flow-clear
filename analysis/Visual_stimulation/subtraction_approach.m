@@ -1,8 +1,8 @@
 %% Add toolboxes and set directories
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/CoSMoMVPA-master'))
-file_path_subjectlist = fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/data/flicker/progs/subjectlist_bids.txt'); 
+addpath(genpath('...')) % Your Cosmo dir here
+file_path_subjectlist = fullfile('...'); % Your subjectlist dir here
 fileID_subjectlist = fopen(file_path_subjectlist, 'r'); 
-projectDir = '/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/data/flicker';
+projectDir = '...'; % Your project dir here
 
 Output_table = table();
 mediation_table = table();
@@ -174,7 +174,7 @@ for session = 1:12
     end
 end
 
-writetable(Output_table,'/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker/flicker_subtraction_approach_25_05_25.xlsx')
-writetable(mediation_table,'/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker/mediation_table_25_05_25.csv')
-writetable(plot_timecourse_table,'/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker/plot_timecourse_table_25_05_25.csv')
-writetable(plot_timecourse_table_rest,'/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results/flicker/plot_timecourse_table_rest_25_05_25.csv')
+writetable(Output_table,'...') % Your output dirs and filenames here
+writetable(mediation_table,'...')
+writetable(plot_timecourse_table,'...')
+writetable(plot_timecourse_table_rest,'...')
