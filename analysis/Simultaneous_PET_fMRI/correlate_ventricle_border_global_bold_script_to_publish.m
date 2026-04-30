@@ -1,12 +1,12 @@
 %% Add toolboxes and set directories/files
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/CoSMoMVPA-master'));
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/CanlabCore-master'));
-addpath(genpath('/data_august/pro_brain_clearance_scz/software/canlab-MediationToolbox-19917e7'));
-dataset = 'SCZ_TRIMAGE';
-project_dir = fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/data',dataset);
+addpath(genpath('...')); % Your COSMO directory here
+addpath(genpath('...')); % Your Canlab directory here
+addpath(genpath('...')); % Your Canlab Mediation directory here
+dataset = 'SCZ_DOPA_LONG'; % Change to SCZ_TRIMAGE for second dataset
+project_dir = fullfile('...',dataset); % Your Project dir here
 
 file_path_subject_list = fullfile(project_dir,'progs/subjectlist_bids.txt'); 
-file_path_results = fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/',dataset,'/ventricular_border_approach_24_07_25.xls');
+file_path_results = fullfile('...'); % Your Results dir here
 fileID_good_subjects = fopen(file_path_subject_list, 'r');
 
 
@@ -70,10 +70,6 @@ for session = 1:2
             timeseries_table = fullfile(project_dir,'/preprocData',sub_id,strcat('ses-',session_id),'/func/timeseries.csv');
             %Read motion file
             data_table = readtable(timeseries_table);
-
-            % Extract columns by column name directly out of pipeline file
-%             gm_column = data_table.GM_AROMA; 
-%             csf_column = data_table.CSF;
 
 
             %% Timecourse extraction by FMRI image - used
@@ -190,13 +186,19 @@ for session = 1:2
                 partial_volume_effect_confidence_interval_normalized = (prctile(partial_volume_voxel_tc_detrend,97.5) - prctile(partial_volume_voxel_tc_detrend,2.5))/mean(mean_partial_volume_voxel_tc);
 
                 gm_amplitude_normalized = (max(gm_column) - min(gm_column))/mean(gm_column);
+                gm_confidence_interval_normalized = (prctile(gm_column_detrend,97.5) - prctile(gm_column_detrend,2.5))/mean(gm_column);
+                csf_amplitude_normalized = (max(csf_column) - min(csf_column))/mean(csf_column);
+                csf_confidence_interval_normalized = (prctile(csf_column_detrend,97.5) - prctile(csf_column_detrend,2.5))/mean(csf_column);
 
                 %% Create the output table
                 Output_table.subID(num_iterations) = string(strcat(sub_id,'-',session_id));
                 Output_table.partial_volume_effect_amplitude_normalized(num_iterations) = partial_volume_effect_amplitude_normalized;
                 Output_table.gm_amplitude_normalized(num_iterations) = gm_amplitude_normalized;
+                Output_table.gm_confidence_interval_normalized(num_iterations) = gm_confidence_interval_normalized;
                 Output_table.partial_volume_effect_confidence_interval_normalized(num_iterations) = partial_volume_effect_confidence_interval_normalized;
                 Output_table.partial_volume_effect_mean_power(num_iterations) = partial_volume_effect_mean_power;
+                Output_table.csf_amplitude_normalized(num_iterations) = csf_amplitude_normalized;
+                Output_table.csf_confidence_interval_normalized(num_iterations) = csf_confidence_interval_normalized;
                 Output_table.r_ventricle_gm(num_iterations) = r_ventricle_gm;
                 Output_table.r_ventricle_csf(num_iterations) = r_ventricle_csf;
                 Output_table.r_gm_csf(num_iterations) = r_gm_csf;
@@ -215,7 +217,8 @@ for session = 1:2
                 plot_timecourse_table.gm_derivative_tc(num_iterations) = {gm_derivative};
                 plot_timecourse_table.gm_tc(num_iterations) = {gm_column_band_timeseries};
                 plot_timecourse_table.pfi_derivative_tc(num_iterations) = {partial_volume_derivative};
-                % plot_timecourse_table.pfi_tc(num_iterations) = {partial_volume_voxel_tc_detrend}; % alternatively: partial_volume_voxel_tc_band_timeseries
+                plot_timecourse_table.pfi_tc_detrend(num_iterations) = {partial_volume_voxel_tc_detrend}; 
+                plot_timecourse_table.pfi_tc_band(num_iterations) = {partial_volume_voxel_tc_band_timeseries}; 
                 plot_timecourse_table.pfi_tc(num_iterations) = {mean_partial_volume_voxel_tc};
                 plot_timecourse_table.csf_tc(num_iterations) = {csf_column_band_timeseries};
                 num_iterations = num_iterations + 1;
@@ -225,6 +228,6 @@ for session = 1:2
         end
     end
 end
-writetable(mediation_table,fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/',dataset,'/mediation_table_24_07_25.csv'))
-writetable(plot_timecourse_table,fullfile('/media/vneumaier/pfi_paper_25/Data_and_scripts_for_publishing/results/',dataset,'/plot_timecourse_table_24_07_25.csv'))
+writetable(mediation_table,fullfile('...')) % Your output dir and file name here
+writetable(plot_timecourse_table,fullfile('...')) % Your output dir and file name here
 writetable(Output_table,file_path_results);

@@ -3,7 +3,7 @@ function  [ventricular_slope,brain_slope,ventricle_volume, mean_striatum_value_s
 %% Script to calculate ventricular clearance from masks in PET images %%
 
 % Add Cosmo-software
-addpath(genpath(['/data_august/pro_brain_clearance_scz/software/CoSMoMVPA-master']));
+addpath(genpath(['...'])); % Your COSMO directory here
     % info: all of the COSMO commands run with "fmri...", they also work for PET as we use NIFTI anyways!
 
 %% SETTINGS %%

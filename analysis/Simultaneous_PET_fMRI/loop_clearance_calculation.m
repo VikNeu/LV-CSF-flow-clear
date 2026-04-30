@@ -2,14 +2,14 @@
 %% Loop to calculate ventricular tracer clearance in pet %%
 
 % Add Cosmo-software
-addpath(genpath(['/data_august/pro_brain_clearance_scz/software/CoSMoMVPA-master']));
+addpath(genpath(['...'])); % Your COSMO directory here
 
 clear;clc;
 
 %% SETTINGS %%
 % call set pathnahmes to get necessary directories
-dataset = 'SCZ_DOPA_LONG';
-projectDir = fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/data',dataset);
+dataset = 'SCZ_DOPA_LONG'; % Change to SCZ_TRIMAGE for second dataset
+projectDir = fullfile('...',dataset); % Your Project dir here
 seed = 'lateral_ventricle';
 brain = 'brain';
 number_of_sessions = 1;
@@ -43,8 +43,8 @@ for session = 1:number_of_sessions
         % Define Freesurfer Output for potential covariates
         options.freesurfer_stats = fullfile(Cfg.preprocDir,subject,['ses-',session],'/anat/freesurfer',subject,'stats/aseg.stats');
         % Define the output for results table
-        options.Output_table_filepath = fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results',dataset,"pet_results_27_05_25_with_timecourse.xlsx");
-        options.Output_table_filepath_mat = fullfile('/media/mbonhoeffer/pfi_paper_25/Data_and_scripts_for_publishing/results',dataset,"pet_results_27_05_25_with_timecourse.mat");
+        options.Output_table_filepath = fullfile('...'); % Your output dir and file name here
+        options.Output_table_filepath_mat = fullfile('...'); % Your output dir and file name here
         
         % Only start the calculation script when pet and lateral ventricle mask exist
         if isfile(options.seed_msk_dir) && isfile(options.pet_cut_dir)
