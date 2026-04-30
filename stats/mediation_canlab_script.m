@@ -1,20 +1,16 @@
-%% Import toolboxes: TODO: EDIT THESE TWO LINES WITH YOUR SPECIFIC DIRECTORY
-addpath(genpath('.../software/CanlabCore-master'));
-addpath(genpath('.../software/canlab-MediationToolbox-19917e7'));
+%% Import toolboxes
+addpath(genpath('...')); % Your Canlab directory here
+addpath(genpath('...')); % Your Canlab mediation directory here
 
 %% Set directories and filenames
-% Path setup
-thisFile = mfilename('fullpath');
-thisFolder = fileparts(thisFile);
-projectRoot = fileparts(thisFolder);
+DOPA_dir = '...'; % Your data directories here
+TRIMAGE_dir = '...';
+flicker_dir = '...';
+sleep_dir = '...';
 
-Simultaneous_PET_fMRI_dir = fullfile(projectRoot, 'data', 'Simultaneous_PET_FMRI');
-flicker_dir = fullfile(projectRoot, 'data', 'Visual_stimulation');
-sleep_dir = fullfile(projectRoot, 'data', 'Sleep');
-
-Input_table_dopa = readtable(fullfile(DOPA_dir,'mediation_table_LONG.csv'));
+Input_table_dopa = readtable(fullfile(DOPA_dir,'mediation_table.csv'));
 Input_table_dopa = Input_table_dopa(2:22,1:end); % First participant has no PET therefore don't use it
-Input_table_trimage = readtable(fullfile(TRIMAGE_dir,'mediation_table_TRIMAGE.csv'));
+Input_table_trimage = readtable(fullfile(TRIMAGE_dir,'mediation_table.csv'));
 Input_table_trimage = Input_table_trimage(1:24,1:end);
 Input_table_flicker = readtable(fullfile(flicker_dir,'mediation_table.csv'));
 Input_table_sleep_sleep = readtable(fullfile(sleep_dir,'mediation_table_only_sleep.csv'));
